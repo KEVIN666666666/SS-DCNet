@@ -67,25 +67,40 @@ if __name__ == '__main__':
             mat = sio.loadmat(rgb_dir)
             rgb = mat['rgbMean'].reshape(1, 1, 3)
             
-            start = time.time()
-            
-            image = Image.open(img_path).convert('RGB')
-            image = transforms.ToTensor()(image)
-            image = image[None,:,:,:]
-            image = get_pad(image,DIV=64)
-            image = image - torch.Tensor(rgb).view(3,1,1)
-            if cuda:
-                image = image.cuda()
-            image = image.type(torch.float32)
-            features = net(image)
-            div_res = net.resample(features)
-            merge_res = net.parse_merge(div_res)
-            outputs = merge_res['div'+str(net.div_times)]
-            del merge_res
-            pre =  (outputs).sum()
-            
-            end = time.time()
-            
-            print('%d' % (pre), end - start)
+            time_list = []
+            n = 1000
+            for _ in range(n):
+                
+                start = time.time()
 
+                image = Image.open(img_path).convert('RGB')
+                image = transforms.ToTensor()(image)
+                image = image[None,:,:,:]
+                image = get_pad(image,DIV=64)
+                image = image - torch.Tensor(rgb).view(3,1,1)
+                
+                if cuda:
+                    image = image.cuda()
+                image = image.type(torch.float32)
+                
+                preprocessing = time.time()
+                
+                features = net(image)
+                
+                inference_time = time.time()
+                
+                div_res = net.resample(features)
+                merge_res = net.parse_merge(div_res)
+                outputs = merge_res['div'+str(net.div_times)]
+                del merge_res
+                pre =  (outputs).sum()
+                
+                postprocessing = time.time()
+
+                print('%d' % (pre))
+                print('total: ',postprocessing - start, 'preprocessing: ', preprocessing - start, 'inference: ', inference_time - preprocessing,\
+                     'postprocessing: ', postprocessing - inference_time)
+                time_list.append(postprocessing - start)
+            
+            print('average: ', sum(time_list) / n)
 
