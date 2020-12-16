@@ -8,6 +8,7 @@ from PIL import Image
 from torchvision import transforms
 from load_data_V2 import get_pad
 import scipy.io as sio
+import time
 
 verbose = False
 cuda = False
@@ -65,6 +66,9 @@ if __name__ == '__main__':
             rgb_dir = os.path.join(FILE_DIR, 'rgbstate.mat')
             mat = sio.loadmat(rgb_dir)
             rgb = mat['rgbMean'].reshape(1, 1, 3)
+            
+            start = time.time()
+            
             image = Image.open(img_path).convert('RGB')
             image = transforms.ToTensor()(image)
             image = image[None,:,:,:]
@@ -79,6 +83,9 @@ if __name__ == '__main__':
             outputs = merge_res['div'+str(net.div_times)]
             del merge_res
             pre =  (outputs).sum()
-            print('%d' % (pre))
+            
+            end = time.time()
+            
+            print('%d' % (pre), end - start)
 
 
